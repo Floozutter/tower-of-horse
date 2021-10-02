@@ -15,6 +15,16 @@ struct TowerHorse {
     direction: Direction,
     x: f32,
 }
+impl From<DropHorse> for TowerHorse {
+    fn from(drophorse: DropHorse) -> Self {
+        let x = drophorse.x();
+        Self {
+            kind: drophorse.kind,
+            direction: drophorse.direction,
+            x: x,
+        }
+    }
+}
 
 struct DropHorse {
     kind: HorseKind,
@@ -26,8 +36,8 @@ struct DropHorse {
     doomed: bool,
 }
 impl DropHorse {
-    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> DropHorse {
-        DropHorse {
+    pub fn gen(_rng: &mut impl rand::Rng, y: f32) -> Self {
+        Self {
             kind: HorseKind::Brown,
             direction: Direction::Left,
             t: 0.0,
