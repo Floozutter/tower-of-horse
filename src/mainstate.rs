@@ -9,22 +9,41 @@ enum HorseKind {
     Gold,
     Book,
 }
+
 struct TowerHorse {
     kind: HorseKind,
     direction: Direction,
     x: f32,
 }
+
 struct DropHorse {
     kind: HorseKind,
     direction: Direction,
-    x: f32,
+    t: f32,
     y: f32,
     v: f32,
     dropping: bool,
     doomed: bool,
 }
+impl DropHorse {
+    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> DropHorse {
+        DropHorse {
+            kind: HorseKind::Brown,
+            direction: Direction::Left,
+            t: 0.0,
+            y: y,
+            v: 0.0,
+            dropping: false,
+            doomed: false,
+        }
+    }
+    pub fn x(&self) -> f32 {
+        300.0
+    }
+}
 
 pub struct MainState {
+    rng: rand_pcg::Pcg64Mcg,
     horsetower: Vec<TowerHorse>,
     drophorse: Option<DropHorse>,
     t: f32,
@@ -33,20 +52,25 @@ pub struct MainState {
 }
 impl MainState {
     const DEFAULT_CAMERA_HEIGHT: f32 = 400.0;
+
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
+        let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
+        let drophorse = DropHorse::gen(&mut rng, 400.0);
         Ok(MainState{
+            rng: rng,
             horsetower: [
                 TowerHorse { kind: HorseKind::Brown, direction: Direction::Left, x: 100.0 },
                 TowerHorse { kind: HorseKind::Gray, direction: Direction::Right, x: 120.0 },
                 TowerHorse { kind: HorseKind::Gold, direction: Direction::Left, x: 140.0 },
             ].into(),
-            drophorse: Some(DropHorse { kind: HorseKind::Book, direction : Direction::Right, x: 400.0, y: 300.0, v: 0.0, dropping: false, doomed: false }),
+            drophorse: Some(drophorse),
             t: 0.0,
             act: false,
             camera_height: MainState::DEFAULT_CAMERA_HEIGHT,
         })
     }
 }
+
 impl ggez::event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
         if let Some(drophorse) = &mut self.drophorse {
@@ -103,7 +127,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             graphics::draw(
                 ctx,
                 &dropmesh,
-                (mint::Point2 { x: d.x, y: self.camera_height - (50.0 + d.y)},),
+                (mint::Point2 { x: d.x(), y: self.camera_height - (50.0 + d.y)},),
             )?;
         }
         // show screen

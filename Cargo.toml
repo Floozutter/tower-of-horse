@@ -6,3 +6,7 @@ edition = "2018"
 
 [dependencies]
 ggez = "0.6.1"
+mint = "0.5.7"
+rand = "0.8.0"
+rand_pcg = "0.3.1"
+rand_seeder = "0.2.2"
