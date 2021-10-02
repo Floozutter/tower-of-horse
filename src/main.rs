@@ -1,20 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-struct MainState;
-
-impl MainState {
-    fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
-        Ok(MainState)
-    }
-}
-impl ggez::event::EventHandler<ggez::GameError> for MainState {
-    fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
-        Ok(())
-    }
-    fn draw(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
-        Ok(())
-    }
-}
+mod mainstate;
 
 fn main() -> ggez::GameResult {
     let ctx_builder = ggez::ContextBuilder::new("tower-of-horse", "floozutter")
@@ -29,6 +15,6 @@ fn main() -> ggez::GameResult {
                 .resizable(false)
         );
     let (mut ctx, event_loop) = ctx_builder.build()?;
-    let state = MainState::new(&mut ctx)?;
+    let state = mainstate::MainState::new(&mut ctx)?;
     ggez::event::run(ctx, event_loop, state)
 }
