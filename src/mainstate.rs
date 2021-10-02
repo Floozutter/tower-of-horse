@@ -65,7 +65,7 @@ impl MainState {
 
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
-        let drophorse = DropHorse::gen(&mut rng, 400.0);
+        let drophorse = DropHorse::gen(&mut rng, 300.0);
         Ok(MainState{
             rng: rng,
             horsetower: [
@@ -91,6 +91,25 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             if drophorse.dropping {
                 drophorse.y += drophorse.v;
                 drophorse.v -= 0.25;
+                let tower_height = 50.0 * self.horsetower.len() as f32;
+                if !drophorse.doomed && drophorse.y < tower_height {
+                    let intersecting = if let Some(tophorse) = self.horsetower.last() {
+                        let a = drophorse.x();
+                        let b = a + 50.0;
+                        let c = tophorse.x;
+                        let d = c + 50.0;
+                        a <= d && c <= b
+                    } else {
+                        false
+                    };
+                    if intersecting {
+                        
+                    } else {
+                        println!("doomed!");
+                        drophorse.doomed = true;
+                        drophorse.v += 10.0;
+                    }
+                }
             }
         }
         Ok(())
