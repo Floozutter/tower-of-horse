@@ -1,5 +1,5 @@
 # tower-of-horse
-stack and climb horses in this unstable Ludum Dare 49 game!
+stack and climb horses in this unstable game started for Ludum Dare 49!
 
 ## build
 ```
