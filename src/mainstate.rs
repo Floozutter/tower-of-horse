@@ -143,6 +143,10 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             );
         }
         // handle dropped
+        for h in self.dropped.iter_mut() {
+            h.v -= 0.25;
+            h.y += h.v;
+        }
         while let Some(lowest) = self.dropped.front() {
             if lowest.y < self.tower_height() {
                 let intersecting = if let Some(tophorse) = self.horsetower.last() {
@@ -167,14 +171,17 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 break;
             }
         }
-        for h in self.dropped.iter_mut() {
-            h.v -= 0.25;
-            h.y += h.v;
-        }
         // handle doomed
         for h in self.doomed.iter_mut() {
             h.v -= 0.25;
             h.y += h.v;
+        }
+        while let Some(lowest) = self.dropped.front() {
+            if lowest.y < -100.0 {
+                self.dropped.pop_front();
+            } else {
+                break;
+            }
         }
         Ok(())
     }
