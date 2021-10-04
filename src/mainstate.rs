@@ -1,8 +1,10 @@
+#[derive(Clone)]
 enum Direction {
     Left,
     Right
 }
 
+#[derive(Clone)]
 enum HorseKind {
     Brown,
     Gray,
@@ -32,31 +34,47 @@ struct DropHorse {
     t: f32,
     y: f32,
     v: f32,
-    dropping: bool,
-    doomed: bool,
 }
 impl DropHorse {
-    pub fn gen(_rng: &mut impl rand::Rng, y: f32) -> Self {
+    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
+        use rand::seq::SliceRandom;
+        let kind = {
+            let x: f32 = rng.gen();
+            if x < 0.3 {
+                HorseKind::Brown
+            } else if x < 0.6 {
+                HorseKind::Gray
+            } else if x < 0.9 {
+                HorseKind::Gold
+            } else {
+                HorseKind::Book
+            }
+        };
         Self {
-            kind: HorseKind::Brown,
-            direction: Direction::Left,
-            t: 0.0,
+            kind: kind,
+            direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
+            t: rng.gen_range(0.0 .. 2.0*std::f32::consts::PI),
             y: y,
             v: 0.0,
-            dropping: false,
-            doomed: false,
         }
     }
     pub fn x(&self) -> f32 {
-        300.0
+        let pre = self.t.sin();
+        let (x1, y1) = (-1.0, 50.0);
+        let (x2, y2) = (1.0, 700.0);
+        let m = (y2 - y1)/(x2 - x1);
+        let b = y1 - m*x1;
+        m*pre + b
     }
 }
 
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
     horsetower: Vec<TowerHorse>,
-    drophorse: Option<DropHorse>,
-    t: f32,
+    heldhorse: DropHorse,
+    nexthorse: DropHorse,
+    dropped: std::collections::VecDeque<DropHorse>,
+    doomed: std::collections::VecDeque<DropHorse>,
     act: bool,
     camera_height: f32,
 }
@@ -65,52 +83,98 @@ impl MainState {
 
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
-        let drophorse = DropHorse::gen(&mut rng, 300.0);
-        Ok(MainState{
+        let heldhorse = DropHorse::gen(&mut rng, 300.0);
+        let nexthorse = DropHorse::gen(&mut rng, 300.0);
+        let mut ret = MainState{
             rng: rng,
             horsetower: [
                 TowerHorse { kind: HorseKind::Brown, direction: Direction::Left, x: 100.0 },
                 TowerHorse { kind: HorseKind::Gray, direction: Direction::Right, x: 120.0 },
                 TowerHorse { kind: HorseKind::Gold, direction: Direction::Left, x: 140.0 },
             ].into(),
-            drophorse: Some(drophorse),
-            t: 0.0,
+            heldhorse: heldhorse,
+            nexthorse: nexthorse,
+            dropped: std::collections::VecDeque::new(),
+            doomed: std::collections::VecDeque::new(),
             act: false,
-            camera_height: MainState::DEFAULT_CAMERA_HEIGHT,
-        })
+            camera_height: 0.0,
+        };
+        ret.reset_spawns();
+        ret.reset_camera();
+        Ok(ret)
+    }
+    
+    fn tower_height(&self) -> f32 {
+        50.0 * self.horsetower.len() as f32
+    }
+    fn drophorse_spawn_height(&self) -> f32 {
+        self.tower_height() + 250.0
+    }
+    fn default_camera_height(&self) -> f32 {
+        self.drophorse_spawn_height() + 75.0
+    }
+
+    fn reset_spawns(&mut self) {
+        self.heldhorse.y = self.drophorse_spawn_height();
+        self.nexthorse.y = self.drophorse_spawn_height();;
+    }
+    fn reset_camera(&mut self) {
+        self.camera_height = self.default_camera_height();
     }
 }
 
 impl ggez::event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
-        if let Some(drophorse) = &mut self.drophorse {
-            if !drophorse.dropping && self.act {
-                drophorse.dropping = true;
-                self.act = false;
-            }
-            if drophorse.dropping {
-                drophorse.y += drophorse.v;
-                drophorse.v -= 0.25;
-                let tower_height = 50.0 * self.horsetower.len() as f32;
-                if !drophorse.doomed && drophorse.y < tower_height {
-                    let intersecting = if let Some(tophorse) = self.horsetower.last() {
-                        let a = drophorse.x();
-                        let b = a + 50.0;
-                        let c = tophorse.x;
-                        let d = c + 50.0;
-                        a <= d && c <= b
-                    } else {
-                        false
-                    };
-                    if intersecting {
-                        
-                    } else {
-                        println!("doomed!");
-                        drophorse.doomed = true;
-                        drophorse.v += 10.0;
-                    }
+        // update heldhorse
+        self.heldhorse.t += 0.01;
+        // drop heldhorse?
+        if self.act {
+            self.act = false;
+            // lol
+            let h = self.drophorse_spawn_height();
+            self.dropped.push_back(
+                std::mem::replace(
+                    &mut self.heldhorse,
+                    std::mem::replace(
+                        &mut self.nexthorse,
+                        DropHorse::gen(&mut self.rng, h)
+                    )
+                )
+            );
+        }
+        // handle dropped
+        while let Some(lowest) = self.dropped.front() {
+            if lowest.y < self.tower_height() {
+                let intersecting = if let Some(tophorse) = self.horsetower.last() {
+                    let a = lowest.x();
+                    let b = a + 50.0;
+                    let c = tophorse.x;
+                    let d = c + 50.0;
+                    a <= d && c <= b
+                } else {
+                    false
+                };
+                let mut lowest = self.dropped.pop_front().expect("no front");
+                if intersecting {
+                    self.horsetower.push(lowest.into());
+                    self.reset_spawns();
+                    self.reset_camera();
+                } else {
+                    lowest.v += 10.0;
+                    self.doomed.push_back(lowest);
                 }
+            } else {
+                break;
             }
+        }
+        for h in self.dropped.iter_mut() {
+            h.v -= 0.25;
+            h.y += h.v;
+        }
+        // handle doomed
+        for h in self.doomed.iter_mut() {
+            h.v -= 0.25;
+            h.y += h.v;
         }
         Ok(())
     }
@@ -145,18 +209,56 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 (mint::Point2 { x: th.x, y: self.camera_height - 50.0*((i+1) as f32) },),
             )?;
         }
-        // draw drophorse
-        if let Some(d) = &self.drophorse {
-            let dropmesh = graphics::Mesh::new_rectangle(
-                ctx,
-                graphics::DrawMode::fill(),
-                [0.0, 0.0, 50.0, 50.0].into(),
-                graphics::Color::RED
-            )?;
+        // draw nexthorse
+        let nextmesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            [0.0, 0.0, 50.0, 50.0].into(),
+            [1.0, 0.0, 1.0, 0.5].into(),
+        )?;
+        graphics::draw(
+            ctx,
+            &nextmesh,
+            (mint::Point2 { x: self.nexthorse.x(), y: self.camera_height - (50.0 + self.nexthorse.y) },),
+        )?;
+        // draw heldhorse
+        let heldmesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            [0.0, 0.0, 50.0, 50.0].into(),
+            graphics::Color::RED
+        )?;
+        graphics::draw(
+            ctx,
+            &heldmesh,
+            (mint::Point2 { x: self.heldhorse.x(), y: self.camera_height - (50.0 + self.heldhorse.y) },),
+        )?;
+        // draw dropped
+        let droppedmesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            [0.0, 0.0, 50.0, 50.0].into(),
+            graphics::Color::GREEN
+        )?;
+        for h in self.dropped.iter() {
             graphics::draw(
                 ctx,
-                &dropmesh,
-                (mint::Point2 { x: d.x(), y: self.camera_height - (50.0 + d.y)},),
+                &droppedmesh,
+                (mint::Point2 { x: h.x(), y: self.camera_height - (50.0 + h.y) },),
+            )?;
+        }
+        // draw doomed
+        let doomedmesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            [0.0, 0.0, 50.0, 50.0].into(),
+            graphics::Color::YELLOW
+        )?;
+        for h in self.doomed.iter() {
+            graphics::draw(
+                ctx,
+                &doomedmesh,
+                (mint::Point2 { x: h.x(), y: self.camera_height - (50.0 + h.y) },),
             )?;
         }
         // show screen
@@ -192,7 +294,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         use ggez::input::mouse::MouseButton;
         match button {
             MouseButton::Middle => {
-                self.camera_height = MainState::DEFAULT_CAMERA_HEIGHT;
+                self.reset_camera();
             },
             _ => {},
         }
