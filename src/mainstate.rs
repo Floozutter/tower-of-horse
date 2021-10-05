@@ -114,7 +114,7 @@ impl MainState {
 
     fn reset_spawns(&mut self) {
         self.heldhorse.y = self.drophorse_spawn_height();
-        self.nexthorse.y = self.drophorse_spawn_height();;
+        self.nexthorse.y = self.drophorse_spawn_height();
     }
     fn reset_camera(&mut self) {
         self.camera_height = self.default_camera_height();
