@@ -79,8 +79,6 @@ pub struct MainState {
     camera_height: f32,
 }
 impl MainState {
-    const DEFAULT_CAMERA_HEIGHT: f32 = 400.0;
-
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
         let heldhorse = DropHorse::gen(&mut rng, 300.0);
