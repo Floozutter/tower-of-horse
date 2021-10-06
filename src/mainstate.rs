@@ -141,7 +141,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             );
         }
         // handle dropped
-        for h in self.dropped.iter_mut() {
+        for h in &mut self.dropped {
             h.v -= 0.25;
             h.y += h.v;
         }
@@ -170,7 +170,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             }
         }
         // handle doomed
-        for h in self.doomed.iter_mut() {
+        for h in &mut self.doomed {
             h.v -= 0.25;
             h.y += h.v;
         }
@@ -245,7 +245,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             [0.0, 0.0, 50.0, 50.0].into(),
             graphics::Color::GREEN
         )?;
-        for h in self.dropped.iter() {
+        for h in &self.dropped {
             graphics::draw(
                 ctx,
                 &droppedmesh,
@@ -259,7 +259,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             [0.0, 0.0, 50.0, 50.0].into(),
             graphics::Color::YELLOW
         )?;
-        for h in self.doomed.iter() {
+        for h in &self.doomed {
             graphics::draw(
                 ctx,
                 &doomedmesh,
