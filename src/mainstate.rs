@@ -147,15 +147,13 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         }
         while let Some(lowest) = self.dropped.front() {
             if lowest.y < self.tower_height() {
-                let intersecting = if let Some(tophorse) = self.horsetower.last() {
+                let intersecting = self.horsetower.last().map_or(false, |tophorse| {
                     let a = lowest.x();
                     let b = a + 50.0;
                     let c = tophorse.x;
                     let d = c + 50.0;
                     a <= d && c <= b
-                } else {
-                    false
-                };
+                });
                 let mut lowest = self.dropped.pop_front().expect("no front");
                 if intersecting {
                     self.horsetower.push(lowest.into());
