@@ -51,10 +51,10 @@ impl DropHorse {
             }
         };
         Self {
-            kind: kind,
+            kind,
             direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
             t: rng.gen_range(0.0 .. 2.0*std::f32::consts::PI),
-            y: y,
+            y,
             v: 0.0,
         }
     }
@@ -84,14 +84,14 @@ impl MainState {
         let heldhorse = DropHorse::gen(&mut rng, 300.0);
         let nexthorse = DropHorse::gen(&mut rng, 300.0);
         let mut ret = MainState{
-            rng: rng,
+            rng,
             horsetower: [
                 TowerHorse { kind: HorseKind::Brown, direction: Direction::Left, x: 100.0 },
                 TowerHorse { kind: HorseKind::Gray, direction: Direction::Right, x: 120.0 },
                 TowerHorse { kind: HorseKind::Gold, direction: Direction::Left, x: 140.0 },
             ].into(),
-            heldhorse: heldhorse,
-            nexthorse: nexthorse,
+            heldhorse,
+            nexthorse,
             dropped: std::collections::VecDeque::new(),
             doomed: std::collections::VecDeque::new(),
             act: false,
