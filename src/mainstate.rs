@@ -23,7 +23,7 @@ impl From<DropHorse> for TowerHorse {
         Self {
             kind: drophorse.kind,
             direction: drophorse.direction,
-            x: x,
+            x,
         }
     }
 }
