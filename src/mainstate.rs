@@ -294,12 +294,8 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         _x: f32,
         _y: f32
     ) {
-        use ggez::input::mouse::MouseButton;
-        match button {
-            MouseButton::Middle => {
-                self.reset_camera();
-            },
-            _ => {},
+        if button == ggez::input::mouse::MouseButton::Middle {
+            self.reset_camera();
         }
     }
 
