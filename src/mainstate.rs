@@ -53,7 +53,7 @@ impl DropHorse {
         Self {
             kind,
             direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
-            t: rng.gen_range(0.0 .. 2.0*std::f32::consts::PI),
+            t: rng.gen_range(0.0..2.0*std::f32::consts::PI),
             y,
             v: 0.0,
         }
