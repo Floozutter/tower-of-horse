@@ -10,6 +10,7 @@ enum HorseKind {
     Gray,
     Gold,
     Book,
+    Dark,
 }
 
 struct TowerHorse {
