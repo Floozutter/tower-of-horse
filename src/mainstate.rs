@@ -39,17 +39,13 @@ struct DropHorse {
 impl DropHorse {
     pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
         use rand::seq::SliceRandom;
-        let kind = {
-            let x: f32 = rng.gen();
-            if x < 0.3 {
-                HorseKind::Brown
-            } else if x < 0.6 {
-                HorseKind::Gray
-            } else if x < 0.9 {
-                HorseKind::Gold
-            } else {
-                HorseKind::Book
-            }
+        let kind = match rng.gen::<f32>() {
+            x if x < 0.0 => HorseKind::Dark,
+            x if x < 0.3 => HorseKind::Brown,
+            x if x < 0.6 => HorseKind::Gray,
+            x if x < 0.9 => HorseKind::Gold,
+            x if x < 1.0 => HorseKind::Book,
+            _ => HorseKind::Dark,
         };
         Self {
             kind,
