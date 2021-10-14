@@ -65,6 +65,8 @@ impl DropHorse {
     }
 }
 
+struct HeldHorse {}
+
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
     horsetower: Vec<TowerHorse>,
