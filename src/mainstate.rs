@@ -65,7 +65,11 @@ impl DropHorse {
     }
 }
 
-struct HeldHorse {}
+struct HeldHorse {
+    kind: HorseKind,
+    direction: Direction,
+    t: f32,
+}
 
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
