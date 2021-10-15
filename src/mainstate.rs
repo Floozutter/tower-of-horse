@@ -70,6 +70,7 @@ struct HeldHorse {
     direction: Direction,
     t: f32,
 }
+impl HeldHorse {}
 
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
