@@ -70,7 +70,11 @@ struct HeldHorse {
     direction: Direction,
     t: f32,
 }
-impl HeldHorse {}
+impl HeldHorse {
+    pub fn x(&self) -> f32 {
+        todo!()
+    }
+}
 
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
