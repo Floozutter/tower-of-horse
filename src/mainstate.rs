@@ -71,6 +71,9 @@ struct HeldHorse {
     t: f32,
 }
 impl HeldHorse {
+    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
+        todo!()
+    }
     pub fn x(&self) -> f32 {
         todo!()
     }
