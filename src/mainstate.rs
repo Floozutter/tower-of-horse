@@ -64,6 +64,11 @@ impl DropHorse {
         m*pre + b
     }
 }
+impl From<HeldHorse> for DropHorse {
+    fn from(heldhorse: HeldHorse) -> Self {
+        todo!()
+    }
+}
 
 struct HeldHorse {
     kind: HorseKind,
