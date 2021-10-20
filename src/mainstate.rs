@@ -37,6 +37,9 @@ struct DropHorse {
     v: f32,
 }
 impl DropHorse {
+    pub fn new(heldhorse: HeldHorse, y: f32) -> Self {
+        todo!()
+    }
     pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
         use rand::seq::SliceRandom;
         let kind = match rng.gen::<f32>() {
@@ -64,11 +67,6 @@ impl DropHorse {
         m*pre + b
     }
 }
-impl From<HeldHorse> for DropHorse {
-    fn from(heldhorse: HeldHorse) -> Self {
-        todo!()
-    }
-}
 
 struct HeldHorse {
     kind: HorseKind,
@@ -76,7 +74,7 @@ struct HeldHorse {
     t: f32,
 }
 impl HeldHorse {
-    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
+    pub fn gen(rng: &mut impl rand::Rng) -> Self {
         todo!()
     }
     pub fn x(&self) -> f32 {
