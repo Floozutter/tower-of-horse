@@ -38,7 +38,13 @@ struct DropHorse {
 }
 impl DropHorse {
     pub fn new(heldhorse: HeldHorse, y: f32) -> Self {
-        todo!()
+        Self {
+            kind: heldhorse.kind,
+            direction: heldhorse.direction,
+            t: heldhorse.t,
+            y,
+            v: 0.0,
+        }
     }
     pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
         use rand::seq::SliceRandom;
