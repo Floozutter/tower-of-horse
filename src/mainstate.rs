@@ -46,24 +46,6 @@ impl DropHorse {
             v: 0.0,
         }
     }
-    pub fn gen(rng: &mut impl rand::Rng, y: f32) -> Self {
-        use rand::seq::SliceRandom;
-        let kind = match rng.gen::<f32>() {
-            x if x < 0.0 => HorseKind::Dark,
-            x if x < 0.3 => HorseKind::Brown,
-            x if x < 0.6 => HorseKind::Gray,
-            x if x < 0.9 => HorseKind::Gold,
-            x if x < 1.0 => HorseKind::Book,
-            _ => HorseKind::Dark,
-        };
-        Self {
-            kind,
-            direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
-            t: rng.gen_range(0.0..2.0*std::f32::consts::PI),
-            y,
-            v: 0.0,
-        }
-    }
     pub fn x(&self) -> f32 {
         let pre = self.t.sin();
         let (x1, y1) = (-1.0, 50.0);
@@ -81,7 +63,20 @@ struct HeldHorse {
 }
 impl HeldHorse {
     pub fn gen(rng: &mut impl rand::Rng) -> Self {
-        todo!()
+        use rand::seq::SliceRandom;
+        let kind = match rng.gen::<f32>() {
+            x if x < 0.0 => HorseKind::Dark,
+            x if x < 0.3 => HorseKind::Brown,
+            x if x < 0.6 => HorseKind::Gray,
+            x if x < 0.9 => HorseKind::Gold,
+            x if x < 1.0 => HorseKind::Book,
+            _ => HorseKind::Dark,
+        };
+        Self {
+            kind,
+            direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
+            t: rng.gen_range(0.0..2.0*std::f32::consts::PI),
+        }
     }
     pub fn x(&self) -> f32 {
         todo!()
@@ -101,8 +96,8 @@ pub struct MainState {
 impl MainState {
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
-        let heldhorse = DropHorse::gen(&mut rng, 300.0);
-        let nexthorse = DropHorse::gen(&mut rng, 300.0);
+        let heldhorse = DropHorse::new(HeldHorse::gen(&mut rng), 300.0);
+        let nexthorse = DropHorse::new(HeldHorse::gen(&mut rng), 300.0);
         let mut ret = MainState{
             rng,
             horsetower: [
@@ -155,7 +150,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                     &mut self.heldhorse,
                     std::mem::replace(
                         &mut self.nexthorse,
-                        DropHorse::gen(&mut self.rng, h)
+                        DropHorse::new(HeldHorse::gen(&mut self.rng), h)
                     )
                 )
             );
