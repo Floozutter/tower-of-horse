@@ -20,11 +20,10 @@ struct TowerHorse {
 }
 impl From<DropHorse> for TowerHorse {
     fn from(drophorse: DropHorse) -> Self {
-        let x = drophorse.x();
         Self {
             kind: drophorse.kind,
             direction: drophorse.direction,
-            x,
+            x: drophorse.x,
         }
     }
 }
@@ -32,27 +31,20 @@ impl From<DropHorse> for TowerHorse {
 struct DropHorse {
     kind: HorseKind,
     direction: Direction,
-    t: f32,
+    x: f32,
     y: f32,
     v: f32,
 }
 impl DropHorse {
     pub fn new(heldhorse: HeldHorse, y: f32) -> Self {
+        let x = heldhorse.x();
         Self {
             kind: heldhorse.kind,
             direction: heldhorse.direction,
-            t: heldhorse.t,
+            x,
             y,
             v: 0.0,
         }
-    }
-    pub fn x(&self) -> f32 {
-        let pre = self.t.sin();
-        let (x1, y1) = (-1.0, 50.0);
-        let (x2, y2) = (1.0, 700.0);
-        let m = (y2 - y1)/(x2 - x1);
-        let b = y1 - m*x1;
-        m*pre + b
     }
 }
 
@@ -79,15 +71,20 @@ impl HeldHorse {
         }
     }
     pub fn x(&self) -> f32 {
-        todo!()
+        let pre = self.t.sin();
+        let (x1, y1) = (-1.0, 50.0);
+        let (x2, y2) = (1.0, 700.0);
+        let m = (y2 - y1)/(x2 - x1);
+        let b = y1 - m*x1;
+        m*pre + b
     }
 }
 
 pub struct MainState {
     rng: rand_pcg::Pcg64Mcg,
     horsetower: Vec<TowerHorse>,
-    heldhorse: DropHorse,
-    nexthorse: DropHorse,
+    heldhorse: HeldHorse,
+    nexthorse: HeldHorse,
     dropped: std::collections::VecDeque<DropHorse>,
     doomed: std::collections::VecDeque<DropHorse>,
     act: bool,
@@ -96,8 +93,8 @@ pub struct MainState {
 impl MainState {
     pub fn new(_ctx: &mut ggez::Context) -> ggez::GameResult<MainState> {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
-        let heldhorse = DropHorse::new(HeldHorse::gen(&mut rng), 300.0);
-        let nexthorse = DropHorse::new(HeldHorse::gen(&mut rng), 300.0);
+        let heldhorse = HeldHorse::gen(&mut rng);
+        let nexthorse = HeldHorse::gen(&mut rng);
         let mut ret = MainState{
             rng,
             horsetower: [
@@ -112,7 +109,6 @@ impl MainState {
             act: false,
             camera_height: 0.0,
         };
-        ret.reset_spawns();
         ret.reset_camera();
         Ok(ret)
     }
@@ -120,17 +116,13 @@ impl MainState {
     fn tower_height(&self) -> f32 {
         50.0 * self.horsetower.len() as f32
     }
-    fn drophorse_spawn_height(&self) -> f32 {
+    fn heldhorse_spawn_height(&self) -> f32 {
         self.tower_height() + 250.0
     }
     fn default_camera_height(&self) -> f32 {
-        self.drophorse_spawn_height() + 75.0
+        self.heldhorse_spawn_height() + 75.0
     }
 
-    fn reset_spawns(&mut self) {
-        self.heldhorse.y = self.drophorse_spawn_height();
-        self.nexthorse.y = self.drophorse_spawn_height();
-    }
     fn reset_camera(&mut self) {
         self.camera_height = self.default_camera_height();
     }
@@ -144,16 +136,16 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         if self.act {
             self.act = false;
             // lol
-            let h = self.drophorse_spawn_height();
-            self.dropped.push_back(
+            self.dropped.push_back(DropHorse::new(
                 std::mem::replace(
                     &mut self.heldhorse,
                     std::mem::replace(
                         &mut self.nexthorse,
-                        DropHorse::new(HeldHorse::gen(&mut self.rng), h)
+                        HeldHorse::gen(&mut self.rng)
                     )
-                )
-            );
+                ),
+                self.heldhorse_spawn_height()
+            ));
         }
         // handle dropped
         for h in &mut self.dropped {
@@ -163,7 +155,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         while let Some(lowest) = self.dropped.front() {
             if lowest.y < self.tower_height() {
                 let intersecting = self.horsetower.last().map_or(false, |tophorse| {
-                    let a = lowest.x();
+                    let a = lowest.x;
                     let b = a + 50.0;
                     let c = tophorse.x;
                     let d = c + 50.0;
@@ -172,7 +164,6 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
                 let mut lowest = self.dropped.pop_front().expect("no front");
                 if intersecting {
                     self.horsetower.push(lowest.into());
-                    self.reset_spawns();
                     self.reset_camera();
                 } else {
                     lowest.v += 10.0;
@@ -237,7 +228,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         graphics::draw(
             ctx,
             &nextmesh,
-            (mint::Point2 { x: self.nexthorse.x(), y: self.camera_height - (50.0 + self.nexthorse.y) },),
+            (mint::Point2 { x: self.nexthorse.x(), y: self.camera_height - (50.0 + self.heldhorse_spawn_height()) },),
         )?;
         // draw heldhorse
         let heldmesh = graphics::Mesh::new_rectangle(
@@ -249,7 +240,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
         graphics::draw(
             ctx,
             &heldmesh,
-            (mint::Point2 { x: self.heldhorse.x(), y: self.camera_height - (50.0 + self.heldhorse.y) },),
+            (mint::Point2 { x: self.heldhorse.x(), y: self.camera_height - (50.0 + self.heldhorse_spawn_height()) },),
         )?;
         // draw dropped
         let droppedmesh = graphics::Mesh::new_rectangle(
@@ -262,7 +253,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             graphics::draw(
                 ctx,
                 &droppedmesh,
-                (mint::Point2 { x: h.x(), y: self.camera_height - (50.0 + h.y) },),
+                (mint::Point2 { x: h.x, y: self.camera_height - (50.0 + h.y) },),
             )?;
         }
         // draw doomed
@@ -276,7 +267,7 @@ impl ggez::event::EventHandler<ggez::GameError> for MainState {
             graphics::draw(
                 ctx,
                 &doomedmesh,
-                (mint::Point2 { x: h.x(), y: self.camera_height - (50.0 + h.y) },),
+                (mint::Point2 { x: h.x, y: self.camera_height - (50.0 + h.y) },),
             )?;
         }
         // show screen
