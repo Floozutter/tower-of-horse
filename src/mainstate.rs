@@ -95,7 +95,7 @@ impl MainState {
         let mut rng = rand_seeder::Seeder::from("uwu").make_rng::<rand_pcg::Pcg64Mcg>();
         let heldhorse = HeldHorse::gen(&mut rng);
         let nexthorse = HeldHorse::gen(&mut rng);
-        let mut ret = MainState{
+        let mut ret = MainState {
             rng,
             horsetower: [
                 TowerHorse { kind: HorseKind::Brown, direction: Direction::Left, x: 100.0 },
