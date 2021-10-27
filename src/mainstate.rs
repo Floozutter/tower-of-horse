@@ -55,7 +55,6 @@ struct HeldHorse {
 }
 impl HeldHorse {
     pub fn gen(rng: &mut impl rand::Rng) -> Self {
-        use rand::seq::SliceRandom;
         let kind = match rng.gen::<f32>() {
             x if x < 0.0 => HorseKind::Dark,
             x if x < 0.3 => HorseKind::Brown,
@@ -66,7 +65,7 @@ impl HeldHorse {
         };
         Self {
             kind,
-            direction: [Direction::Left, Direction::Right].choose(rng).expect("no direction").clone(),
+            direction: if rng.gen() { Direction::Left } else { Direction::Right },
             t: rng.gen_range(0.0..2.0*std::f32::consts::PI),
         }
     }
